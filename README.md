@@ -5,8 +5,7 @@ This repository contains data files, analysis scripts, and the draft manuscript 
 
 
 # Data Files (not in the repo)
-* `data/XXXXX.xlsx` -- Excel file containing the biological data specific to this project.
-* `data/XXXXX.xlsx` -- Excel file containing the effort data.
+* `lake-trout-lipids-2018.xlsx` -- Excel file containing the biological data specific to this project.
 
 
 # Scripts

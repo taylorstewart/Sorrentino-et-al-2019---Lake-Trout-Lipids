@@ -1,7 +1,7 @@
 # Data files (so that they are not in a public repo)
 data/.DS_Store
-data/*.xlsx
-data/*.csv
+*.xlsx
+*.csv
 
 # History files
 .Rhistory
