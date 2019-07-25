@@ -1,4 +1,4 @@
-Lake Trout Lipid Content in Lake Champlain
+Lake trout lipid analysis between wild and stocked juveniles in Lake Champlain (Sorrentino et al.)
 ==========
 
 This repository contains data files, analysis scripts, and the draft manuscript for *Differential lipid dynamics in stocked and wild juvenile lake trout* by Madelyn G. Sorrentino, Taylor R. Stewart, J. Ellen Marsden, and Jason D. Stockwell that will be submitted to the Journal of Great Lakes Research.
