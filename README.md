@@ -4,7 +4,7 @@ Lake Trout Lipid Content in Lake Champlain
 This repository contains data files, analysis scripts, and the draft manuscript for *Differential lipid dynamics in stocked and wild juvenile lake trout* by Madelyn G. Sorrentino, Taylor R. Stewart, J. Ellen Marsden, and Jason D. Stockwell that will be submitted to the Journal of Great Lakes Research.
 
 
-# Data files (not in the repo)
+# Data Files (not in the repo)
 * `data/XXXXX.xlsx` -- Excel file containing the biological data specific to this project.
 * `data/XXXXX.xlsx` -- Excel file containing the effort data.
 
