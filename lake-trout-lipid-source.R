@@ -25,11 +25,7 @@ library(boot)
 ## ===========================================================
 ## lipid by region ANOVA 
 ## ===========================================================
-###read in data; change file name as needed
-## for Maddi's computer
-#ltlipids.source <- read_excel("~/Desktop/thesis/data/LTlipids_extractions_master_03.16.19_QAQC.xlsx", "Data") %>% 
-## for Taylor's computer
-ltlipids.source <- read_excel("LTlipids_extractions_master_03.16.19_QAQC.xlsx", "Data") %>% 
+ltlipids.source <- read_excel("lake-trout-lipids-2018.xlsx", sheet = "Data") %>% 
   ## remove problematic rows and hatchery fish
   filter(include == 'y',
          location != "Grand Isle Hatchery") %>% 
@@ -146,4 +142,5 @@ ggplot(ltlipids.source.loc.summary, aes(x = location, y = mean.lipids, group = s
         legend.spacing.x = unit(0.3, 'cm'),
         axis.ticks.length = unit(2.5, 'mm'), plot.margin = unit(c(5, 7.5, 2, 2), "mm"))
 
-ggsave("LKT-Lipid-Source.tiff", dpi = 300, width = 10, height = 8)
+ggsave("figures/Sorrentino_et_al_Fig2.tiff", dpi = 300, width = 10, height = 8)
+ggsave("figures/Sorrentino_et_al_Fig2_LowRes.tiff", dpi = 150, width = 10, height = 8)

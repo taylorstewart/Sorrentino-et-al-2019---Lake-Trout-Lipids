@@ -26,11 +26,7 @@ library(car)        # leveneTest()
 ## ===========================================================
 ## lipid by region ANOVA 
 ## ===========================================================
-###read in data; change file name as needed
-## for Maddi's computer
-#ltlipids.season <- read_excel("~/Desktop/thesis/data/LTlipids_extractions_master_03.16.19_QAQC.xlsx","Data") %>% 
-## for Taylor's computer
-ltlipids.season <- read_excel("LTlipids_extractions_master_03.16.19_QAQC.xlsx","Data") %>% 
+ltlipids.season <- read_excel("lake-trout-lipids-2018.xlsx", sheet = "Data") %>% 
   ## remove problematic rows and hatchery fish
   filter(include == 'y', location %in% c("Central", "Grand Isle Hatchery")) %>% 
   ## rename species/source variables and modify class to factor variables
@@ -129,4 +125,5 @@ ggplot(ltlipids.season.summary, aes(x = season, y = mean.lipids, group = source)
         legend.spacing.x = unit(0.3, 'cm'),
         axis.ticks.length = unit(2.5, 'mm'), plot.margin = unit(c(5, 7.5, 2, 2), "mm"))
 
-ggsave("LKT-Lipid-Season.tiff", dpi = 300, width = 10, height = 8)
+ggsave("figures/Sorrentino_et_al_Fig3.tiff", dpi = 300, width = 10, height = 8)
+ggsave("figures/Sorrentino_et_al_Fig3_LowRes.tiff", dpi = 150, width = 10, height = 8)
