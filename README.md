@@ -1,10 +1,10 @@
 Lake trout lipid (Sorrentino et al.)
 ==========
 
-This repository contains data files, analysis scripts, and the draft manuscript for *Differential lipid dynamics in stocked and wild juvenile lake trout* by Madelyn G. Sorrentino, Taylor R. Stewart, J. Ellen Marsden, and Jason D. Stockwell that will be submitted to the Journal of Great Lakes Research.
+This repository contains data files, analysis scripts, and the draft manuscript for *Differential lipid dynamics in stocked and wild juvenile lake trout* by Madelyn G. Sorrentino, Taylor R. Stewart, J. Ellen Marsden, and Jason D. Stockwell that has been submitted for publication in the Journal of Great Lakes Research.
 
 
-# Data Files (not in the repo)
+# Data Files
 * `lake-trout-lipids-2018.xlsx` -- Excel file containing the biological data specific to this project.
 
 
