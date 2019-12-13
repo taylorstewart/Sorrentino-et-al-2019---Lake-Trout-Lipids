@@ -34,7 +34,7 @@ ltlipids <- read_excel("lake-trout-lipids-2018.xlsx", sheet = "Data") %>%
   mutate(location = factor(location, levels = c("South", "Central", "North", "Grand Isle Hatchery")),
          source = factor(ifelse(.$source == "wild", "Wild", "Stocked")),
          season = factor(season, levels = c("Pre-winter","Spring", "Summer", "Autumn")),
-         age_class = ifelse(source == "Wild", age_class-1, age_class),
+         age_class = ifelse(source == "Wild", age_class, age_class),
          lipids.prop = avg_perc_lipid/100,
          lipid.logit = car::logit(avg_perc_lipid, percents = TRUE)) %>% 
   ## remove unused columns - clean data frame
@@ -51,6 +51,24 @@ ltlipids.tl.summary <- ltlipids %>% group_by(source, season, location) %>%
             mean.tl = mean(tl)
             )
 print(ltlipids.tl.summary)
+
+ltlipids.lipids.summary.age <- ltlipids %>% group_by(source, season, age_class) %>% 
+  summarize(n = n(),
+            min.lipids = min(avg_perc_lipid),
+            max.lipids = max(avg_perc_lipid),
+            mean.lipids = mean(avg_perc_lipid),
+            sd.lipids = sd(avg_perc_lipid),
+            se = sd.lipids/sqrt(n)
+  )
+
+ltlipids.lipids.summary <- filter(ltlipids, season != "Pre-winter") %>% group_by(source) %>% 
+  summarize(n = n(),
+            min.lipids = min(avg_perc_lipid),
+            max.lipids = max(avg_perc_lipid),
+            mean.lipids = mean(avg_perc_lipid),
+            sd.lipids = sd(avg_perc_lipid),
+            se = sd.lipids/sqrt(n)
+  )
 
 
 ## FIT MODEL (lipids ~ tl * source * location * season) =========
@@ -125,25 +143,78 @@ obs.fstat <- data.frame(obs.f = anova(lm(lipid.logit ~ tl * source * location * 
                                      "tl.source.season", "tl.location.season", "source.location.season",
                                      "tl.source.location.season"))
 
+## Calculate p-values from empirical distribution
+p.value <- data.frame(p.value = c(
+  1-ecdf(f.values.boot$tl)(filter(obs.fstat, variable == "tl")$obs.f),
+  1-ecdf(f.values.boot$source)(filter(obs.fstat, variable == "source")$obs.f),
+  1-ecdf(f.values.boot$location)(filter(obs.fstat, variable == "location")$obs.f),
+  1-ecdf(f.values.boot$season)(filter(obs.fstat, variable == "season")$obs.f),
+  1-ecdf(f.values.boot$tl.source)(filter(obs.fstat, variable == "tl.source")$obs.f),
+  1-ecdf(f.values.boot$tl.location)(filter(obs.fstat, variable == "tl.location")$obs.f),
+  1-ecdf(f.values.boot$source.location)(filter(obs.fstat, variable == "source.location")$obs.f),
+  1-ecdf(f.values.boot$tl.season)(filter(obs.fstat, variable == "tl.season")$obs.f),
+  1-ecdf(f.values.boot$source.season)(filter(obs.fstat, variable == "source.season")$obs.f),
+  1-ecdf(f.values.boot$location.season)(filter(obs.fstat, variable == "location.season")$obs.f),
+  1-ecdf(f.values.boot$tl.source.location)(filter(obs.fstat, variable == "tl.source.location")$obs.f),
+  1-ecdf(f.values.boot$tl.source.season)(filter(obs.fstat, variable == "tl.source.season")$obs.f),
+  1-ecdf(f.values.boot$tl.location.season)(filter(obs.fstat, variable == "tl.location.season")$obs.f),
+  1-ecdf(f.values.boot$source.location.season)(filter(obs.fstat, variable == "source.location.season")$obs.f),
+  1-ecdf(f.values.boot$tl.source.location.season)(filter(obs.fstat, variable == "tl.source.location.season")$obs.f)),
+  variable = c("tl", "source", "location", "season", 
+               "tl.source", "tl.location", "source.location", "tl.season",
+               "source.season", "location.season", "tl.source.location",
+               "tl.source.season", "tl.location.season", "source.location.season",
+               "tl.source.location.season"))
+
 ## Compare oberserved F to boostrapped F 
 f.test <- left_join(fstat.boot.95perc, obs.fstat) %>% 
+  left_join(p.value) %>% 
   mutate(test = ifelse(obs.f > perc95.f, "Sig.", "Not Sig."))
-  ## Significant variables and interactions:
-  ## length, source, season
-  ## tl:season, tl:source, season:location
+## Significant variables and interactions:
+## length, source, season
+## tl:source, tl:season, location:season
 
 
 ## VISUALIZATION ================================================
-## TL:Season Interaction
-ggplot(filter(ltlipids, location != "Grand Isle Hatchery"), aes(x = tl, y = avg_perc_lipid, color = season, linetype = season)) +
-  geom_text(aes(label = age_class), show.legend = FALSE, size = 5.5, alpha = 0.8) +
+## TL:Season Interaction; TL:Source Interaction
+ggplot(ltlipids, aes(x = tl, y = avg_perc_lipid)) +
+  geom_text(aes(label = age_class, color = season), show.legend = FALSE, size = 5.5, alpha = 0.8) +
   geom_smooth(data = filter(ltlipids, location != "Grand Isle Hatchery"),
-              aes(x = tl, y = avg_perc_lipid), 
+              aes(linetype = season, color = season), 
               method = "lm", se = FALSE, size = 1) +
+  geom_smooth(data = filter(ltlipids, location != "Grand Isle Hatchery"),
+              method = "lm", se = FALSE, color = "black", size = 1, show.legend = FALSE) +
   scale_x_continuous(limits = c(75, 350), breaks = seq(100, 350, 50), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 45), breaks = seq(0, 45, 7.5), expand = c(0, 0)) +
-  scale_colour_manual(values = c("#2b83ba", "#d7191c", "#fdae61")) + 
-  scale_linetype_manual(values = c("solid", "solid", "dotdash", "dashed")) +
+  scale_colour_manual(values = c("black", "#2b83ba", "#d7191c", "#fdae61", "black"), 
+                      labels = c("", "", "Spring", "Summer", "Autumn")) + 
+  scale_linetype_manual(values = c("dotted", "dotdash", "dashed", "solid")) + 
+                        #labels = c( "Spring", "Summer", "Autumn")) +
+  labs(y = 'Mean % Lipid Content', x = 'Total Length (mm)') +
+  theme(axis.text = element_text(size = 20), axis.line.x = element_line(), 
+        axis.line.y = element_line(), 
+        axis.title.x = element_text(size = 22, margin = margin(15, 0, 0, 0)),
+        axis.title.y = element_text(size = 22, margin = margin(0, 15, 0, 0)),
+        axis.ticks.length = unit(2.5, 'mm'), 
+        legend.key = element_blank(), legend.position = "none",
+        strip.background = element_blank(), strip.text = element_text(size = 22),
+        panel.background = element_blank(), panel.grid = element_blank(),
+        panel.spacing = unit(2, "lines"),
+        plot.margin = unit(c(5, 7.5, 2, 2), "mm")) +
+  facet_wrap(~source, scales = "free_y")
+
+ggsave("figures/Sorrentino_et_al_Fig2.tiff", dpi = 300, width = 12, height = 7)
+ggsave("figures/Sorrentino_et_al_Fig2_LowRes.tiff", dpi = 150, width = 12, height = 7)
+
+
+
+ggplot(filter(ltlipids, season != "Pre-winter"), aes(x = tl, y = avg_perc_lipid, linetype = season, color = season)) +
+  geom_smooth(method = "lm", se = FALSE, size = 1) +
+  scale_x_continuous(limits = c(75, 350), breaks = seq(100, 350, 50), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 45), breaks = seq(0, 45, 7.5), expand = c(0, 0)) +
+  scale_colour_manual(values = c("#2b83ba", "#d7191c", "#fdae61"), 
+                      labels = c("Spring", "Summer", "Autumn")) + 
+  scale_linetype_manual(values = c("dotted", "dotdash", "dashed", "solid")) + 
   labs(y = 'Mean % Lipid Content', x = 'Total Length (mm)') +
   theme(axis.text = element_text(size = 20), axis.line.x = element_line(), 
         axis.line.y = element_line(), 
@@ -152,84 +223,17 @@ ggplot(filter(ltlipids, location != "Grand Isle Hatchery"), aes(x = tl, y = avg_
         axis.ticks.length = unit(2.5, 'mm'), 
         legend.text = element_text(size = 16), legend.title = element_blank(),
         legend.key.width = unit(1.2, 'cm'), legend.key.height = unit(0.8, 'cm'), 
-        legend.key = element_blank(), legend.position = c(0.1125, 0.915),
+        legend.key = element_blank(), legend.position = c(0.655, 0.92),
         legend.spacing.x = unit(0.3, 'cm'),
         strip.background = element_blank(), strip.text = element_text(size = 22),
         panel.background = element_blank(), panel.grid = element_blank(),
         panel.spacing = unit(2, "lines"),
-        plot.margin = unit(c(5, 7.5, 2, 2), "mm"))
+        plot.margin = unit(c(5, 7.5, 2, 2), "mm")) +
+  facet_wrap(~source, scales = "free_y")
 
-ggsave("figures/Sorrentino_et_al_Fig2.tiff", dpi = 300, width = 10, height = 7)
-ggsave("figures/Sorrentino_et_al_Fig2_LowRes.tiff", dpi = 150, width = 10, height = 7)
-
-## TL:Source Interaction
-ggplot(ltlipids, aes(x = tl, y = avg_perc_lipid, color = source, linetype = source)) +
-  geom_text(aes(label = age_class), show.legend = FALSE, size = 5.5, alpha = 0.8) +
-  geom_smooth(data = filter(ltlipids, location != "Grand Isle Hatchery"),
-              aes(x = tl, y = avg_perc_lipid), 
-              method = "lm", se = FALSE, size = 1) +
-  scale_colour_manual(values = c("black", "#2b83ba")) + 
-  scale_x_continuous(limits = c(75, 350), breaks = seq(100, 350, 50), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(0, 45), breaks = seq(0, 45, 7.5), expand = c(0, 0)) +
-  scale_linetype_manual(values = c("solid", "dashed")) +
-  labs(y = 'Mean % Lipid Content', x = 'Total Length (mm)') +
-  theme(axis.text = element_text(size = 20), axis.line.x = element_line(), 
-        axis.line.y = element_line(), 
-        axis.title.x = element_text(size = 22, margin = margin(15, 0, 0, 0)),
-        axis.title.y = element_text(size = 22, margin = margin(0, 15, 0, 0)),
-        axis.ticks.length = unit(2.5, 'mm'), 
-        legend.text = element_text(size = 16), legend.title = element_blank(),
-        legend.key.width = unit(1.2, 'cm'), legend.key.height = unit(0.8, 'cm'), 
-        legend.key = element_blank(), legend.position = c(0.11, 0.94),
-        legend.spacing.x = unit(0.3, 'cm'),
-        strip.background = element_blank(), strip.text = element_text(size = 22),
-        panel.background = element_blank(), panel.grid = element_blank(),
-        panel.spacing = unit(2, "lines"),
-        plot.margin = unit(c(5, 7.5, 2, 2), "mm"))
-
-ggsave("figures/Sorrentino_et_al_Fig3.tiff", dpi = 300, width = 10, height = 7)
-ggsave("figures/Sorrentino_et_al_Fig3_LowRes.tiff", dpi = 150, width = 10, height = 7)
-
+ggsave("figures/Sorrentino_et_al_Fig2_legend.tiff", dpi = 300, width = 12, height = 7)
 
 ## Location:Season Interaction
-ltlipids.lp.summary <- ltlipids %>% filter(season != "Pre-winter") %>% 
-  group_by(season, location) %>% 
-  summarize(n = n(),
-            mean.lp = mean(avg_perc_lipid),
-            sd.lp = sd(avg_perc_lipid),
-            se.lp = sd.lp/sqrt(n)
-  ) %>% ungroup() %>% 
-  group_by(location) %>% 
-  mutate(width = 0.15 * n())
-
-ggplot(ltlipids.lp.summary, aes(x = location, y = mean.lp, color = season, shape = season, group = season, width = width)) +
-  geom_point(size = 3.5, position = position_dodge(width = 0.2)) +
-  geom_errorbar(aes(ymin = mean.lp - se.lp, ymax = mean.lp + se.lp), 
-                position = position_dodge(width = 0.2), size = 1) +
-  geom_line(size = 1, position = position_dodge(width = 0.2)) +
-  scale_y_continuous(limits = c(12.5, 20), breaks = seq(12.5, 20, 2.5), expand = c(0, 0)) +
-  scale_colour_manual("", values = c("#2b83ba", "#d7191c", "#fdae61")) + 
-  scale_shape_manual("", values = c(15, 16, 17)) +
-  labs(y = 'Mean % Lipid Content', x = 'Lake Region', color = "Season") +
-  theme(axis.text = element_text(size = 20), axis.line.x = element_line(), 
-        axis.line.y = element_line(), 
-        axis.title.x = element_text(size = 22, margin = margin(15, 0, 0, 0)),
-        axis.title.y = element_text(size = 22, margin = margin(0, 15, 0, 0)),
-        axis.ticks.length = unit(2.5, 'mm'), 
-        legend.text = element_text(size = 16), legend.title = element_blank(),
-        legend.key.width = unit(1.2, 'cm'), legend.key.height = unit(0.8, 'cm'), 
-        legend.key = element_blank(), legend.position = c(0.90, 0.90),
-        legend.spacing.x = unit(0.3, 'cm'),
-        strip.background = element_blank(), strip.text = element_text(size = 22),
-        panel.background = element_blank(), panel.grid = element_blank(),
-        panel.spacing = unit(2, "lines"),
-        plot.margin = unit(c(5, 7.5, 2, 2), "mm"))
-
-ggsave("figures/Sorrentino_et_al_Fig4.tiff", dpi = 300, width = 10, height = 7)
-ggsave("figures/Sorrentino_et_al_Fig4_LowRes.tiff", dpi = 150, width = 10, height = 7)
-
-
-
 ltlipids.lp.summary.source <- ltlipids %>% filter(season != "Pre-winter") %>% 
   group_by(season, location, source) %>% 
   summarize(n = n(),
@@ -256,7 +260,7 @@ ggplot(ltlipids.lp.summary.source, aes(x = location, y = mean.lp, color = season
         axis.ticks.length = unit(2.5, 'mm'), 
         legend.text = element_text(size = 16), legend.title = element_blank(),
         legend.key.width = unit(1.2, 'cm'), legend.key.height = unit(0.8, 'cm'), 
-        legend.key = element_blank(), legend.position = c(0.12, 0.90),
+        legend.key = element_blank(), legend.position = c(0.10, 0.90),
         legend.spacing.x = unit(0.3, 'cm'),
         strip.background = element_blank(), strip.text = element_text(size = 22),
         panel.background = element_blank(), panel.grid = element_blank(),
@@ -264,6 +268,6 @@ ggplot(ltlipids.lp.summary.source, aes(x = location, y = mean.lp, color = season
         plot.margin = unit(c(5, 7.5, 2, 2), "mm")) +
   facet_wrap(~source, scales = "free_y")
 
-ggsave("figures/Sorrentino_et_al_Fig4_source.tiff", dpi = 300, width = 10, height = 7)
-ggsave("figures/Sorrentino_et_al_Fig4_source_LowRes.tiff", dpi = 150, width = 10, height = 7)
+ggsave("figures/Sorrentino_et_al_Fig3.tiff", dpi = 300, width = 12, height = 7)
+ggsave("figures/Sorrentino_et_al_Fig3_LowRes.tiff", dpi = 150, width = 12, height = 7)
 
