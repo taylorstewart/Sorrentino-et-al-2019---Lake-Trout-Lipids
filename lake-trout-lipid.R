@@ -186,7 +186,8 @@ ggplot(ltlipids, aes(x = tl, y = avg_perc_lipid)) +
               method = "lm", se = FALSE, color = "black", size = 1, show.legend = FALSE) +
   scale_x_continuous(limits = c(75, 350), breaks = seq(100, 350, 50), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 45), breaks = seq(0, 45, 7.5), expand = c(0, 0)) +
-  scale_colour_manual(values = c("black", "#2b83ba", "#d7191c", "#fdae61", "black"), 
+  scale_colour_manual(values = c("black", "gray80", "gray60", "gray40", "black"),
+  #scale_colour_manual(values = c("black", "#2b83ba", "#d7191c", "#fdae61", "black"), 
                       labels = c("", "", "Spring", "Summer", "Autumn")) + 
   scale_linetype_manual(values = c("dotted", "dotdash", "dashed", "solid")) + 
                         #labels = c( "Spring", "Summer", "Autumn")) +
@@ -203,8 +204,8 @@ ggplot(ltlipids, aes(x = tl, y = avg_perc_lipid)) +
         plot.margin = unit(c(5, 7.5, 2, 2), "mm")) +
   facet_wrap(~source, scales = "free_y")
 
-ggsave("figures/Sorrentino_et_al_Fig2.tiff", dpi = 300, width = 12, height = 7)
-ggsave("figures/Sorrentino_et_al_Fig2_LowRes.tiff", dpi = 150, width = 12, height = 7)
+ggsave("figures/Sorrentino_et_al_Fig2_grayscale.tiff", dpi = 300, width = 12, height = 7)
+ggsave("figures/Sorrentino_et_al_Fig2_LowRes_grayscale.tiff", dpi = 100, width = 12, height = 7)
 
 
 
@@ -212,7 +213,8 @@ ggplot(filter(ltlipids, season != "Pre-winter"), aes(x = tl, y = avg_perc_lipid,
   geom_smooth(method = "lm", se = FALSE, size = 1) +
   scale_x_continuous(limits = c(75, 350), breaks = seq(100, 350, 50), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 45), breaks = seq(0, 45, 7.5), expand = c(0, 0)) +
-  scale_colour_manual(values = c("#2b83ba", "#d7191c", "#fdae61"), 
+  scale_colour_manual(values = c("gray80", "gray60", "gray40"), 
+  #scale_colour_manual(values = c("#2b83ba", "#d7191c", "#fdae61"), 
                       labels = c("Spring", "Summer", "Autumn")) + 
   scale_linetype_manual(values = c("dotted", "dotdash", "dashed", "solid")) + 
   labs(y = 'Mean % Lipid Content', x = 'Total Length (mm)') +
@@ -231,28 +233,28 @@ ggplot(filter(ltlipids, season != "Pre-winter"), aes(x = tl, y = avg_perc_lipid,
         plot.margin = unit(c(5, 7.5, 2, 2), "mm")) +
   facet_wrap(~source, scales = "free_y")
 
-ggsave("figures/Sorrentino_et_al_Fig2_legend.tiff", dpi = 300, width = 12, height = 7)
+ggsave("figures/Sorrentino_et_al_Fig2_legend_grayscale.tiff", dpi = 300, width = 12, height = 7)
+
 
 ## Location:Season Interaction
-ltlipids.lp.summary.source <- ltlipids %>% filter(season != "Pre-winter") %>% 
-  group_by(season, location, source) %>% 
-  summarize(n = n(),
-            mean.lp = mean(avg_perc_lipid),
+
+ltlipids.lp.summary <- ltlipids.filt %>% group_by(source, season, location, source) %>% 
+  summarize(mean.lp = mean(avg_perc_lipid),
             sd.lp = sd(avg_perc_lipid),
-            se.lp = sd.lp/sqrt(n)
-  ) %>% ungroup() %>% 
-  group_by(location) %>% 
+            se.lp = sd.lp/sqrt(n())) %>% ungroup() %>% 
+  group_by(season) %>% 
   mutate(width = 0.15 * n())
 
-ggplot(ltlipids.lp.summary.source, aes(x = location, y = mean.lp, color = season, shape = season, group = season, width = width)) +
-  geom_point(size = 3.5, position = position_dodge(width = 0.2)) +
+ggplot(ltlipids.lp.summary, aes(x = season, y = mean.lp, color = location, shape = location, group = location, width = width)) +
+  geom_point(size = 3.5, position = position_dodge(width = 0.3)) +
   geom_errorbar(aes(ymin = mean.lp - se.lp, ymax = mean.lp + se.lp), 
-                position = position_dodge(width = 0.2), size = 1) +
+                position = position_dodge(width = 0.3), size = 1) +
   geom_line(size = 1, position = position_dodge(width = 0.2)) +
   scale_y_continuous(limits = c(10, 30), breaks = seq(10, 30, 5), expand = c(0, 0)) +
+  #scale_colour_manual("", values = c("black", "gray70", "gray40")) + 
   scale_colour_manual("", values = c("#2b83ba", "#d7191c", "#fdae61")) + 
   scale_shape_manual("", values = c(15, 16, 17)) +
-  labs(y = 'Mean % Lipid Content', x = 'Lake Region', color = "Season") +
+  labs(y = 'Mean % Lipid Content', x = 'Season', color = "Location") +
   theme(axis.text = element_text(size = 20), axis.line.x = element_line(), 
         axis.line.y = element_line(), 
         axis.title.x = element_text(size = 22, margin = margin(15, 0, 0, 0)),
@@ -260,7 +262,7 @@ ggplot(ltlipids.lp.summary.source, aes(x = location, y = mean.lp, color = season
         axis.ticks.length = unit(2.5, 'mm'), 
         legend.text = element_text(size = 16), legend.title = element_blank(),
         legend.key.width = unit(1.2, 'cm'), legend.key.height = unit(0.8, 'cm'), 
-        legend.key = element_blank(), legend.position = c(0.10, 0.90),
+        legend.key = element_blank(), legend.position = c(0.09, 0.90),
         legend.spacing.x = unit(0.3, 'cm'),
         strip.background = element_blank(), strip.text = element_text(size = 22),
         panel.background = element_blank(), panel.grid = element_blank(),
@@ -269,5 +271,5 @@ ggplot(ltlipids.lp.summary.source, aes(x = location, y = mean.lp, color = season
   facet_wrap(~source, scales = "free_y")
 
 ggsave("figures/Sorrentino_et_al_Fig3.tiff", dpi = 300, width = 12, height = 7)
-ggsave("figures/Sorrentino_et_al_Fig3_LowRes.tiff", dpi = 150, width = 12, height = 7)
+ggsave("figures/Sorrentino_et_al_Fig3_LowRes.tiff", dpi = 100, width = 12, height = 7)
 
